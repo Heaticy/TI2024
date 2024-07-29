@@ -27,10 +27,28 @@
 /* USER CODE BEGIN Includes */
 #include "AD9959.h"
 #include "HMC472.h"
+#include "debug.h"
+#include "ch455.h"
+#include "delay.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+#define VAMP_MIN 116 // 有效值是100mV
+#define VAMP_A_MIN 35
+
+uint16_t vamp_L = VAMP_MIN;
+uint16_t vamp_step = VAMP_MIN;
+uint16_t vamp_min = VAMP_MIN;
+uint16_t vamp_A = VAMP_A_MIN;
+
+double adjust = 0.3;
+
+extern uint16_t CH455_KEY_RX_FLAG; //键盘接收状态标记	
+extern uint8_t CH455_KEY_NUM;			//按下键盘的值
+
+uint8_t mode = 1; // 1是加法模式，0是减法模式
 
 /* USER CODE END PTD */
 
@@ -59,6 +77,135 @@ void PeriphCommonClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+    
+		//注意要调整中断优先级使SYSTICK的高于按键中断 
+		HAL_Delay(50); //延时实现消抖，但在复杂程序不建议在中断中使用延时函数
+		
+		if (GPIO_Pin == GPIO_PIN_12){	// 判断中断来自于PC12管脚
+				//判断PC12被按下
+				if (GPIO_PIN_RESET == HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_12)){
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+					mode = 0;
+				}
+		}
+		else if (GPIO_Pin == GPIO_PIN_3){	// 判断中断来自于PE3管脚
+				if (GPIO_PIN_RESET == HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_3)){
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+					mode = 1;
+				}
+		}
+		else if (GPIO_Pin == GPIO_PIN_13){
+			
+			CH455_KEY_RX_FLAG = 1;
+			
+			CH455_KEY_NUM = CH455_Key_Read();
+
+		
+			if (CH455_KEY_NUM == 0){ // 调节RMS
+				if (mode == 0){ // 减法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+					HAL_Delay(500);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+					if(vamp_L - vamp_step > 0){
+						vamp_L = vamp_L - vamp_step;
+					}
+					else if(vamp_L == 0){
+						vamp_L = 1023;
+					}
+					else{
+						vamp_L = 0;
+					}
+				}
+				if (mode == 1){ // 加法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+					HAL_Delay(500);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+					if(vamp_L + vamp_step < 1024){
+						vamp_L = vamp_L + vamp_step;
+					}
+					else if(vamp_L == 1023){
+						vamp_L = vamp_min;
+					}
+					else{
+						vamp_L = 1023;
+					}
+				}
+				
+			}
+			if (CH455_KEY_NUM == 1){ // 调节调制
+				if (mode == 0){ // 减法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+					HAL_Delay(500);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+					if(adjust - 0.1 > 0.22){
+						adjust = adjust - 0.1;
+					}
+					else if((adjust - 0.3 < 0.05) | (0.3 - adjust < 0.05)){
+						adjust = 0.9;
+					}
+					else{
+						adjust = 0.3;
+					}
+				}
+				if (mode == 1){ // 加法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+					HAL_Delay(500);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+					if(adjust + 0.1 < 0.98){
+						adjust = adjust + 0.1;
+					}
+					else if((adjust - 0.9 < 0.05) | (0.9 - adjust < 0.05)){
+						adjust = 0.3;
+					}
+					else{
+						adjust = 0.9;
+					}
+				}
+				printf("t7.txt=\"%d %% \"\xff\xff\xff",(int)(adjust*100.0+0.01));
+			}
+			if (CH455_KEY_NUM == 2){ // 调节频率
+				if (mode == 0){ // 减法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+					HAL_Delay(500);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+					if(adjust - 0.1 > 0.2){
+						adjust = adjust - 0.1;
+					}
+					else if(adjust == 0.3){
+						adjust = 0.9;
+					}
+					else{
+						adjust = 0.3;
+					}
+				}
+				if (mode == 1){ // 加法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+					HAL_Delay(500);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+					if(adjust + 0.1 < 1.0){
+						adjust = adjust + 0.1;
+					}
+					else if(adjust == 0.9){
+						adjust = 0.3;
+					}
+					else{
+						adjust = 0.9;
+					}
+				}
+			}
+			
+			if (CH455_KEY_NUM == 3){
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+				HAL_Delay(500);
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+			}
+			__HAL_GPIO_EXTI_CLEAR_FLAG(GPIO_PIN_13);
+		}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -68,7 +215,7 @@ void PeriphCommonClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	uint32_t i = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -98,21 +245,60 @@ int main(void)
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 	Init_AD9959();
-	AD9959_SetFrequency4Channel(30000000,35000000,40000000,0);
-	AD9959_SetAmp4Channel(1023,1023,1023,1023);
+	AD9959_SetFrequency4Channel(35000000,35000000,35000000,35000000);
+	AD9959_SetAmp4Channel(113,1023,1023,1023);
 	AD9959_SetPhase4Channel(0,90,180,270);
+	
+	printf("t12.txt=\"ready\"\xff\xff\xff");
+	printf("t7.txt=\"%d %% \"\xff\xff\xff",(int)(adjust*100.0+0.01));
+	
+  for (i = 0; i < 3; i = i + 1){
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+		HAL_Delay(200);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+		HAL_Delay(200);
+	}
+	
+	delay_init(480);//延时函数初始化
+	delay_ms(100);//100ms必须加，ch455上电后需要一段时间才能启动
+	CH455_init();//ch455 初始化
+	
+	
+	CH455_Display(1,1);//数码管1显示1
+	CH455_Display(2,2);//数码管2显示2
+	CH455_Display(3,3);//数码管3显示3
+	CH455_Display(4,4);//数码管4显示4
+	
+	Init_AD9959();
+	AD9959_SetPhase4Channel(0,0,0,0);
+	AD9959_SetFrequency4Channel(35000000,2000000,35000000,2000000);
+	AD9959_SetAmp4Channel(1023,100,100,100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+	
+	while (1)
   {
+		if(CH455_KEY_RX_FLAG == 1)	//键盘按下，在终端中读取CH455寄存器完成后
+		{
+			CH455_Display(1,CH455_KEY_NUM);//数码管显示按键值
+			CH455_Display(2,CH455_KEY_NUM);
+			CH455_Display(3,CH455_KEY_NUM);
+			CH455_Display(4,CH455_KEY_NUM);
+			CH455_KEY_RX_FLAG = 0;
+		}
+		HAL_Delay(100);		//延时
+//		vamp_A = round(vamp_L*adjust);
+//		AD9959_SetAmp4Channel(vamp_L,vamp_A,vamp_L,vamp_A);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
+
+
 
 /**
   * @brief System Clock Configuration

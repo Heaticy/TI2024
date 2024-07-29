@@ -57,8 +57,6 @@ void PendSV_Handler(void);
 void SysTick_Handler(void);
 void EXTI3_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
-void LPTIM1_IRQHandler(void);
-void LPTIM2_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

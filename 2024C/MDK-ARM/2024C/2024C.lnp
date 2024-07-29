@@ -31,7 +31,11 @@
 "2024c\system_stm32h7xx.o"
 "2024c\ad9959.o"
 "2024c\hmc472.o"
---strict --scatter "2024C\2024C.sct"
+"2024c\debug.o"
+"2024c\ch455.o"
+"2024c\myiic.o"
+"2024c\delay.o"
+--library_type=microlib --strict --scatter "2024C\2024C.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
 --list "2024C.map" -o 2024C\2024C.axf

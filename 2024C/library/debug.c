@@ -1,9 +1,9 @@
-#include "debug/debug.h"
+#include "debug.h"
 #include "stm32h7xx_hal.h"
 #include "usart.h"
 
 
-UART_HandleTypeDef *huart_debug = &huart4; ///< Debug串口
+UART_HandleTypeDef *huart_debug = &huart1; ///< Debug串口
 
 static uint8_t device_er[2] = {'E','R'};//返回错误ER
 uint8_t USART_RX_BUF[USART_REC_LEN];     //接收缓冲,最大USART_REC_LEN个字节.

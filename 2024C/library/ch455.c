@@ -1,7 +1,7 @@
-#include "CH455/ch455.h"
-#include "IIC/myiic.h"
+#include "ch455.h"
+#include "myiic.h"
 #include "stm32h7xx_hal.h"
-#include "DELAY/delay.h"
+#include "delay.h"
 
 //////////////////////////////////////////////////////////////////////////////////	 
 //本程序只供学习使用，未经作者许可，不得用于其它任何用途
