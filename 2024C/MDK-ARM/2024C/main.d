@@ -42,5 +42,4 @@
 2024c\main.o: ../Core/Inc/usart.h
 2024c\main.o: ../Core/Inc/gpio.h
 2024c\main.o: ..\library\AD9959.h
-2024c\main.o: ..\library\HMC472.c
 2024c\main.o: ..\library\HMC472.h

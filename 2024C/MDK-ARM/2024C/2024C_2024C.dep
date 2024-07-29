@@ -1,7 +1,7 @@
 Dependencies for Project '2024C', Target '2024C': (DO NOT MODIFY !)
 CompilerVersion: 5060960::V5.06 update 7 (build 960)::.\ARMCC
 F (startup_stm32h750xx.s)(0x66A71717)(--cpu Cortex-M7.fp.dp -g --apcs=interwork -I.\RTE\_2024C-IC:\Users\Dell\AppData\Local\Arm\Packs\ARM\CMSIS\5.8.0\CMSIS\Core\Include-IC:\Users\Dell\AppData\Local\Arm\Packs\Keil\STM32H7xx_DFP\3.1.1\Drivers\CMSIS\Device\ST\STM32H7xx\Include--pd "__UVISION_VERSION SETA 535" --pd "_RTE_ SETA 1" --pd "STM32H750xx SETA 1" --pd "_RTE_ SETA 1"--list startup_stm32h750xx.lst --xref -o 2024c\startup_stm32h750xx.o --depend 2024c\startup_stm32h750xx.d)
-F (../Core/Src/main.c)(0x66A71817)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O3 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ..\library-I.\RTE\_2024C-IC:\Users\Dell\AppData\Local\Arm\Packs\ARM\CMSIS\5.8.0\CMSIS\Core\Include-IC:\Users\Dell\AppData\Local\Arm\Packs\Keil\STM32H7xx_DFP\3.1.1\Drivers\CMSIS\Device\ST\STM32H7xx\Include-D__UVISION_VERSION="535" -D_RTE_ -DSTM32H750xx -D_RTE_ -DUSE_HAL_DRIVER -DSTM32H750xx-o 2024c\main.o --omf_browse 2024c\main.crf --depend 2024c\main.d)
+F (../Core/Src/main.c)(0x66A71897)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O3 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ..\library-I.\RTE\_2024C-IC:\Users\Dell\AppData\Local\Arm\Packs\ARM\CMSIS\5.8.0\CMSIS\Core\Include-IC:\Users\Dell\AppData\Local\Arm\Packs\Keil\STM32H7xx_DFP\3.1.1\Drivers\CMSIS\Device\ST\STM32H7xx\Include-D__UVISION_VERSION="535" -D_RTE_ -DSTM32H750xx -D_RTE_ -DUSE_HAL_DRIVER -DSTM32H750xx-o 2024c\main.o --omf_browse 2024c\main.crf --depend 2024c\main.d)
 I (../Core/Inc/main.h)(0x66A71717)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h)(0x66A71717)
 I (../Core/Inc/stm32h7xx_hal_conf.h)(0x66A71717)
@@ -44,7 +44,6 @@ I (../Core/Inc/tim.h)(0x66A71717)
 I (../Core/Inc/usart.h)(0x66A71717)
 I (../Core/Inc/gpio.h)(0x66A71717)
 I (..\library\AD9959.h)(0x66A71717)
-I (..\library\HMC472.c)(0x66A71717)
 I (..\library\HMC472.h)(0x66A71717)
 F (../Core/Src/gpio.c)(0x66A71717)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O3 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ..\library-I.\RTE\_2024C-IC:\Users\Dell\AppData\Local\Arm\Packs\ARM\CMSIS\5.8.0\CMSIS\Core\Include-IC:\Users\Dell\AppData\Local\Arm\Packs\Keil\STM32H7xx_DFP\3.1.1\Drivers\CMSIS\Device\ST\STM32H7xx\Include-D__UVISION_VERSION="535" -D_RTE_ -DSTM32H750xx -D_RTE_ -DUSE_HAL_DRIVER -DSTM32H750xx-o 2024c\gpio.o --omf_browse 2024c\gpio.crf --depend 2024c\gpio.d)
 I (../Core/Inc/gpio.h)(0x66A71717)

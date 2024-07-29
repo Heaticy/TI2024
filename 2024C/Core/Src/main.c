@@ -23,7 +23,7 @@
 #include "usart.h"
 #include "gpio.h"
 #include "AD9959.h"
-#include "HMC472.c"
+#include "HMC472.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -98,10 +98,10 @@ int main(void)
   MX_LPTIM2_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-Init_AD9959();
-AD9959_SetFrequency4Channel(30000000,35000000,40000000,0);
-AD9959_SetAmp4Channel(1023,1023,1023,1023);
-AD9959_SetPhase4Channel(0,90,180,270);
+	Init_AD9959();
+	AD9959_SetFrequency4Channel(30000000,35000000,40000000,0);
+	AD9959_SetAmp4Channel(1023,1023,1023,1023);
+	AD9959_SetPhase4Channel(0,90,180,270);
   /* USER CODE END 2 */
 
   /* Infinite loop */
