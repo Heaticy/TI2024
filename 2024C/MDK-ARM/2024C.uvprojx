@@ -727,11 +727,6 @@
               <FilePath>..\library\AD9959.c</FilePath>
             </File>
             <File>
-              <FileName>HMC472.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\library\HMC472.c</FilePath>
-            </File>
-            <File>
               <FileName>debug.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\library\debug.c</FilePath>
@@ -750,6 +745,11 @@
               <FileName>delay.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\library\delay.c</FilePath>
+            </File>
+            <File>
+              <FileName>HMC472.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\library\HMC472.c</FilePath>
             </File>
           </Files>
         </Group>

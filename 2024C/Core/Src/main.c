@@ -176,7 +176,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 					}
 				}
 				dac_voltage = 0.9 / adjust;
-				if (dac_voltage > 3.25){dac_voltage = 3.3;}
+				if (dac_voltage > 3.25f){dac_voltage = 3.3f;}
 				
 				printf("t13.txt=\"%d %% \"\xff\xff\xff",(int)(dac_voltage));
 				printf("t7.txt=\"%d %% \"\xff\xff\xff",(int)(adjust*100.0+0.01));
