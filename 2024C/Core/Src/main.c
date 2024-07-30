@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dac.h"
 #include "lptim.h"
 #include "tim.h"
 #include "usart.h"
@@ -216,6 +217,8 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	uint32_t i = 0;
+	float dac_voltage = 0; //dac output votage
+uint32_t dac_value = 0; //dac code
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -243,7 +246,12 @@ int main(void)
   MX_LPTIM1_Init();
   MX_LPTIM2_Init();
   MX_TIM4_Init();
+  MX_DAC1_Init();
   /* USER CODE BEGIN 2 */
+	dac_voltage = 1;//set dac output to 1V
+	dac_value = (uint32_t)(dac_voltage/3.3f*4095.0f);//vref=3.3v
+	HAL_DAC_Start(&hdac1,DAC_CHANNEL_1);//dac1 open
+	HAL_DAC_SetValue(&hdac1,DAC_CHANNEL_1,DAC_ALIGN_12B_R,dac_value);//channel 1 output
 	Init_AD9959();
 	AD9959_SetFrequency4Channel(35000000,35000000,35000000,35000000);
 	AD9959_SetAmp4Channel(113,1023,1023,1023);
@@ -297,8 +305,6 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
-
 
 /**
   * @brief System Clock Configuration
