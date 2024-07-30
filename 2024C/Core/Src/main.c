@@ -50,7 +50,7 @@ uint16_t deg = 0;
 
 double adjust = 0.3;
 
-float dac_voltage = 3.0f;//set dac output to 2V
+float dac_voltage = 3.0f;//set dac output to 3V
 
 extern uint16_t CH455_KEY_RX_FLAG; //键盘接收状态标记	
 extern uint8_t CH455_KEY_NUM;			//按下键盘的值
