@@ -37,19 +37,25 @@
 /* USER CODE BEGIN PTD */
 
 #define VAMP_MIN 116 // 有效值是100mV
-#define VAMP_A_MIN 35
+#define VAMP_A_MIN 845
 
 uint16_t vamp_L = VAMP_MIN;
 uint16_t vamp_step = VAMP_MIN;
 uint16_t vamp_min = VAMP_MIN;
 uint16_t vamp_A = VAMP_A_MIN;
 
+uint32_t f_L = 35000000;
+
+uint16_t deg = 0;
+
 double adjust = 0.3;
+
+float dac_voltage = 3.0f;//set dac output to 2V
 
 extern uint16_t CH455_KEY_RX_FLAG; //键盘接收状态标记	
 extern uint8_t CH455_KEY_NUM;			//按下键盘的值
 
-uint8_t mode = 1; // 1是加法模式，0是减法模式
+uint8_t mode = 1; // 1是加法模式，0是减法模式，2是CW测量模式
 
 /* USER CODE END PTD */
 
@@ -89,6 +95,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
 					mode = 0;
+					printf("t12.txt=\"- mode \"\xff\xff\xff");
 				}
 		}
 		else if (GPIO_Pin == GPIO_PIN_3){	// 判断中断来自于PE3管脚
@@ -96,6 +103,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
 					mode = 1;
+					printf("t12.txt=\"+ mode \"\xff\xff\xff");
 				}
 		}
 		else if (GPIO_Pin == GPIO_PIN_13){
@@ -134,7 +142,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						vamp_L = 1023;
 					}
 				}
+				AD9959_SetAmp4Channel(vamp_L,vamp_A,vamp_L,vamp_A);
 				
+				printf("t6.txt=\"%d \"\xff\xff\xff",vamp_L);
 			}
 			if (CH455_KEY_NUM == 1){ // 调节调制
 				if (mode == 0){ // 减法模式
@@ -165,43 +175,139 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						adjust = 0.9;
 					}
 				}
+				dac_voltage = 0.9 / adjust;
+				if (dac_voltage > 3.25){dac_voltage = 3.3;}
+				
+				printf("t13.txt=\"%d %% \"\xff\xff\xff",(int)(dac_voltage));
 				printf("t7.txt=\"%d %% \"\xff\xff\xff",(int)(adjust*100.0+0.01));
 			}
 			if (CH455_KEY_NUM == 2){ // 调节频率
 				if (mode == 0){ // 减法模式
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
-					HAL_Delay(500);
+					HAL_Delay(100);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-					if(adjust - 0.1 > 0.2){
-						adjust = adjust - 0.1;
+					if(f_L - 1000000 > 30000000){
+						f_L = f_L - 1000000;
 					}
-					else if(adjust == 0.3){
-						adjust = 0.9;
+					else if(f_L == 30000000){
+						f_L = 40000000;
 					}
 					else{
-						adjust = 0.3;
+						adjust = 30000000;
+					}
+				}
+				if (mode == 1){ // 加法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+					HAL_Delay(100);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+					if(f_L + 1000000 < 40000000){
+						f_L = f_L + 1000000;
+					}
+					else if(f_L == 40000000){
+						f_L = 30000000;
+					}
+					else{
+						f_L = 40000000;
+					}
+				}
+				AD9959_SetFrequency4Channel(f_L,2000000,f_L,2000000);
+				
+				printf("t8.txt=\"%d  \"\xff\xff\xff",f_L);
+			}
+		
+			if (CH455_KEY_NUM == 3){
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+				HAL_Delay(100);
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+			}
+			
+			if (CH455_KEY_NUM == 4){
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+				HAL_Delay(100);
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+			}
+			
+			if (CH455_KEY_NUM == 5){
+				if (mode == 0){ // 减法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+					HAL_Delay(100);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+					if(deg - 30 > 0){
+						deg = deg - 30;
+					}
+					else if(deg == 0){
+						deg = 180;
+					}
+					else{
+						deg = 0;
+					}
+				}
+				if (mode == 1){ // 加法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+					HAL_Delay(100);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+					if(deg + 30 < 180){
+						deg = deg + 30;
+					}
+					else if(deg == 180){
+						deg = 0;
+					}
+					else{
+						deg = 180;
+					}
+				}
+				AD9959_SetPhase4Channel(0,0,0,deg);
+				
+				printf("t11.txt=\"%d deg \"\xff\xff\xff",deg);
+			}
+			
+			if (CH455_KEY_NUM == 6){ // 调节衰减，需要等代码调试
+				if (mode == 0){ // 减法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+					HAL_Delay(500);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+					if(vamp_L - vamp_step > 0){
+						vamp_L = vamp_L - vamp_step;
+					}
+					else if(vamp_L == 0){
+						vamp_L = 1023;
+					}
+					else{
+						vamp_L = 0;
 					}
 				}
 				if (mode == 1){ // 加法模式
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
 					HAL_Delay(500);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
-					if(adjust + 0.1 < 1.0){
-						adjust = adjust + 0.1;
+					if(vamp_L + vamp_step < 1024){
+						vamp_L = vamp_L + vamp_step;
 					}
-					else if(adjust == 0.9){
-						adjust = 0.3;
+					else if(vamp_L == 1023){
+						vamp_L = vamp_min;
 					}
 					else{
-						adjust = 0.9;
+						vamp_L = 1023;
 					}
 				}
+
+				
+				printf("t9.txt=\"%d dB\"\xff\xff\xff",vamp_L);
 			}
 			
-			if (CH455_KEY_NUM == 3){
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-				HAL_Delay(500);
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+			if (CH455_KEY_NUM == 7){ // 开启CW测量模式，直流偏置为1V
+				uint8_t i;
+				for (i = 0; i < 3; i++){
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+					HAL_Delay(100);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+					HAL_Delay(100);
+				}
+				mode = 2;
+				dac_voltage = 1.0;
+				
+				printf("t12.txt=\"CW test \"\xff\xff\xff");
+				printf("t13.txt=\"%d %% \"\xff\xff\xff",(int)(dac_voltage));
 			}
 			__HAL_GPIO_EXTI_CLEAR_FLAG(GPIO_PIN_13);
 		}
@@ -217,8 +323,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	uint32_t i = 0;
-	float dac_voltage = 0; //dac output votage
-uint32_t dac_value = 0; //dac code
+	uint32_t dac_value = 0; //dac code
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -248,17 +353,20 @@ uint32_t dac_value = 0; //dac code
   MX_TIM4_Init();
   MX_DAC1_Init();
   /* USER CODE BEGIN 2 */
-	dac_voltage = 1;//set dac output to 1V
 	dac_value = (uint32_t)(dac_voltage/3.3f*4095.0f);//vref=3.3v
 	HAL_DAC_Start(&hdac1,DAC_CHANNEL_1);//dac1 open
 	HAL_DAC_SetValue(&hdac1,DAC_CHANNEL_1,DAC_ALIGN_12B_R,dac_value);//channel 1 output
 	Init_AD9959();
-	AD9959_SetFrequency4Channel(35000000,35000000,35000000,35000000);
-	AD9959_SetAmp4Channel(113,1023,1023,1023);
-	AD9959_SetPhase4Channel(0,90,180,270);
+	AD9959_SetFrequency4Channel(f_L,2000000,f_L,2000000);
+	AD9959_SetAmp4Channel(vamp_L,vamp_A,vamp_L,vamp_A);
+	AD9959_SetPhase4Channel(0,0,0,deg);
 	
-	printf("t12.txt=\"ready\"\xff\xff\xff");
+	printf("t12.txt=\"+ mode \"\xff\xff\xff");
+	printf("t6.txt=\"%d \"\xff\xff\xff",vamp_L);
 	printf("t7.txt=\"%d %% \"\xff\xff\xff",(int)(adjust*100.0+0.01));
+	printf("t8.txt=\"%d  \"\xff\xff\xff",f_L);
+	printf("t11.txt=\"%d deg \"\xff\xff\xff",deg);
+	printf("t13.txt=\"%d %% \"\xff\xff\xff",(int)(dac_voltage));
 	
   for (i = 0; i < 3; i = i + 1){
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
@@ -276,11 +384,6 @@ uint32_t dac_value = 0; //dac code
 	CH455_Display(2,2);//数码管2显示2
 	CH455_Display(3,3);//数码管3显示3
 	CH455_Display(4,4);//数码管4显示4
-	
-	Init_AD9959();
-	AD9959_SetPhase4Channel(0,0,0,0);
-	AD9959_SetFrequency4Channel(35000000,2000000,35000000,2000000);
-	AD9959_SetAmp4Channel(1023,100,100,100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -297,8 +400,6 @@ uint32_t dac_value = 0; //dac code
 			CH455_KEY_RX_FLAG = 0;
 		}
 		HAL_Delay(100);		//延时
-//		vamp_A = round(vamp_L*adjust);
-//		AD9959_SetAmp4Channel(vamp_L,vamp_A,vamp_L,vamp_A);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
