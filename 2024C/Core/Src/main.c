@@ -48,6 +48,8 @@ uint32_t f_L = 35000000;
 
 uint16_t deg = 0;
 
+uint16_t attenuation = 0;
+
 double adjust = 0.3;
 
 float dac_voltage = 3.0f;//set dac output to 3V
@@ -266,33 +268,33 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 					HAL_Delay(500);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-					if(vamp_L - vamp_step > 0){
-						vamp_L = vamp_L - vamp_step;
+					if(attenuation - 2 > 0){
+						attenuation = attenuation - 2;
 					}
-					else if(vamp_L == 0){
-						vamp_L = 1023;
+					else if(attenuation == 0){
+						attenuation = 20;
 					}
 					else{
-						vamp_L = 0;
+						attenuation = 0;
 					}
 				}
 				if (mode == 1){ // 加法模式
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
 					HAL_Delay(500);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
-					if(vamp_L + vamp_step < 1024){
-						vamp_L = vamp_L + vamp_step;
+					if(attenuation + 2 < 20){
+						attenuation = attenuation + 2;
 					}
-					else if(vamp_L == 1023){
-						vamp_L = vamp_min;
+					else if(attenuation == 20){
+						attenuation = 0;
 					}
 					else{
-						vamp_L = 1023;
+						attenuation = 20;
 					}
 				}
 
 				
-				printf("t9.txt=\"%d dB\"\xff\xff\xff",vamp_L);
+				printf("t9.txt=\"%d dB\"\xff\xff\xff",attenuation);
 			}
 			
 			if (CH455_KEY_NUM == 7){ // 开启CW测量模式，直流偏置为1V
@@ -352,6 +354,7 @@ int main(void)
   MX_LPTIM2_Init();
   MX_TIM4_Init();
   MX_DAC1_Init();
+	HMC472_Init();
   /* USER CODE BEGIN 2 */
 	dac_value = (uint32_t)(dac_voltage/3.3f*4095.0f);//vref=3.3v
 	HAL_DAC_Start(&hdac1,DAC_CHANNEL_1);//dac1 open
