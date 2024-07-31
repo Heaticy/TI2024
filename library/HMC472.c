@@ -49,6 +49,6 @@ void HMC472_Init(void)
 //-----------------------------------------------------------------
 void HMC472set(unsigned int num) 
 {
-	num = (num & 0x00000003) | (num << 2);
+		num = (num & 0x00000003) | (num << 2);
     GPIOC->BSRR = (~num & 0x000000F3) | ((num & 0x000000F3) << 16);
 }

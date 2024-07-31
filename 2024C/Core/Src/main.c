@@ -37,27 +37,36 @@
 /* USER CODE BEGIN PTD */
 
 #define VAMP_MIN 116 // 有效值是100mV
-#define VAMP_A_MIN 845
+
 
 uint16_t vamp_L = VAMP_MIN;
 uint16_t vamp_step = VAMP_MIN;
 uint16_t vamp_min = VAMP_MIN;
-uint16_t vamp_A = VAMP_A_MIN;
+uint16_t vamp_A_1 = 282; // 原来是845
+uint16_t vamp_A_2 = 315; // 原来是945；待调试###
+
+float vp_B = 0.6f; 
+#define VP_B 0.6f
 
 uint32_t f_L = 35000000;
 
 uint16_t deg = 0;
 
 uint16_t attenuation = 0;
+uint16_t attenuation_hmc= 0;
+
+
 
 double adjust = 0.3;
 
+
 float dac_voltage = 3.0f;//set dac output to 3V
+uint32_t dac_value = (uint32_t)(VP_B/3.3f*4095.0f); //dac code
 
 extern uint16_t CH455_KEY_RX_FLAG; //键盘接收状态标记	
 extern uint8_t CH455_KEY_NUM;			//按下键盘的值
 
-uint8_t mode = 1; // 1是加法模式，0是减法模式，2是CW测量模式
+uint8_t mode = 3; // 1是加法模式，0是减法模式，2是CW测量模式
 
 /* USER CODE END PTD */
 
@@ -118,7 +127,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			if (CH455_KEY_NUM == 0){ // 调节RMS
 				if (mode == 0){ // 减法模式
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
-					HAL_Delay(500);
+					HAL_Delay(100);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
 					if(vamp_L - vamp_step > 0){
 						vamp_L = vamp_L - vamp_step;
@@ -132,7 +141,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				}
 				if (mode == 1){ // 加法模式
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
-					HAL_Delay(500);
+					HAL_Delay(100);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
 					if(vamp_L + vamp_step < 1024){
 						vamp_L = vamp_L + vamp_step;
@@ -144,14 +153,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						vamp_L = 1023;
 					}
 				}
-				AD9959_SetAmp4Channel(vamp_L,vamp_A,vamp_L,vamp_A);
+				AD9959_SetAmp4Channel(vamp_L,vamp_A_1,vamp_L,vamp_A_2);
 				
 				printf("t6.txt=\"%d \"\xff\xff\xff",vamp_L);
 			}
 			if (CH455_KEY_NUM == 1){ // 调节调制
 				if (mode == 0){ // 减法模式
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
-					HAL_Delay(500);
+					HAL_Delay(100);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
 					if(adjust - 0.1 > 0.22){
 						adjust = adjust - 0.1;
@@ -165,7 +174,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				}
 				if (mode == 1){ // 加法模式
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
-					HAL_Delay(500);
+					HAL_Delay(100);
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
 					if(adjust + 0.1 < 0.98){
 						adjust = adjust + 0.1;
@@ -177,10 +186,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						adjust = 0.9;
 					}
 				}
-				dac_voltage = 0.9 / adjust;
-				if (dac_voltage > 3.25f){dac_voltage = 3.3f;}
 				
-				printf("t13.txt=\"%d %% \"\xff\xff\xff",(int)(dac_voltage));
+				dac_voltage = vp_B / adjust;
+				if (dac_voltage > 3.25f){dac_voltage = 3.3f;}
+				dac_value = (uint32_t)(dac_voltage/3.3f*4095.0f);
+				HAL_DAC_SetValue(&hdac1,DAC_CHANNEL_1,DAC_ALIGN_12B_R,dac_value);//channel 1 output
+				
+				printf("t13.txt=\"%f V \"\xff\xff\xff",dac_voltage);
 				printf("t7.txt=\"%d %% \"\xff\xff\xff",(int)(adjust*100.0+0.01));
 			}
 			if (CH455_KEY_NUM == 2){ // 调节频率
@@ -195,7 +207,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						f_L = 40000000;
 					}
 					else{
-						adjust = 30000000;
+						f_L = 30000000;
 					}
 				}
 				if (mode == 1){ // 加法模式
@@ -214,22 +226,52 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				}
 				AD9959_SetFrequency4Channel(f_L,2000000,f_L,2000000);
 				
-				printf("t8.txt=\"%d  \"\xff\xff\xff",f_L);
+				printf("t8.txt=\"%d MHz  \"\xff\xff\xff",f_L/1000000);
 			}
 		
-			if (CH455_KEY_NUM == 3){
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-				HAL_Delay(100);
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+			if (CH455_KEY_NUM == 3){ // 调节衰减db
+				if (mode == 0){ // 减法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+					HAL_Delay(100);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+					if(attenuation - 2 > 0){
+						attenuation = attenuation - 2;
+					}
+					else if(attenuation == 0){
+						attenuation = 20;
+					}
+					else{
+						attenuation = 0;
+					}
+				}
+				if (mode == 1){ // 加法模式
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+					HAL_Delay(100);
+					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+					if(attenuation + 2 < 20){
+						attenuation = attenuation + 2;
+					}
+					else if(attenuation == 20){
+						attenuation = 0;
+					}
+					else{
+						attenuation = 20;
+					}
+				}
+
+				attenuation_hmc = attenuation * 2;
+				HMC472set(attenuation_hmc);
+				
+				printf("t9.txt=\"%d dB\"\xff\xff\xff",attenuation);
 			}
 			
-			if (CH455_KEY_NUM == 4){
-				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-				HAL_Delay(100);
+			if (CH455_KEY_NUM == 4){ // 调节延迟
 				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+				HAL_Delay(100);
+				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
 			}
 			
-			if (CH455_KEY_NUM == 5){
+			if (CH455_KEY_NUM == 5){ // 调节相位
 				if (mode == 0){ // 减法模式
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 					HAL_Delay(100);
@@ -263,41 +305,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				printf("t11.txt=\"%d deg \"\xff\xff\xff",deg);
 			}
 			
-			if (CH455_KEY_NUM == 6){ // 调节衰减，需要等代码调试
-				if (mode == 0){ // 减法模式
-					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
-					HAL_Delay(500);
-					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-					if(attenuation - 2 > 0){
-						attenuation = attenuation - 2;
-					}
-					else if(attenuation == 0){
-						attenuation = 20;
-					}
-					else{
-						attenuation = 0;
-					}
-				}
-				if (mode == 1){ // 加法模式
-					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
-					HAL_Delay(500);
-					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
-					if(attenuation + 2 < 20){
-						attenuation = attenuation + 2;
-					}
-					else if(attenuation == 20){
-						attenuation = 0;
-					}
-					else{
-						attenuation = 20;
-					}
-				}
-
-				
-				printf("t9.txt=\"%d dB\"\xff\xff\xff",attenuation);
-			}
-			
-			if (CH455_KEY_NUM == 7){ // 开启CW测量模式，直流偏置为1V
+			if (CH455_KEY_NUM == 6){ // 开启CW测量模式，直流偏置为1V
 				uint8_t i;
 				for (i = 0; i < 3; i++){
 					HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
@@ -307,9 +315,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				}
 				mode = 2;
 				dac_voltage = 1.0;
+				vamp_A_1 = 0;
+				
+				AD9959_SetAmp4Channel(vamp_L,vamp_A_1,vamp_L,vamp_A_2);
 				
 				printf("t12.txt=\"CW test \"\xff\xff\xff");
-				printf("t13.txt=\"%d %% \"\xff\xff\xff",(int)(dac_voltage));
+				printf("t13.txt=\"%d V \"\xff\xff\xff",(int)(dac_voltage));
 			}
 			__HAL_GPIO_EXTI_CLEAR_FLAG(GPIO_PIN_13);
 		}
@@ -324,8 +335,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+	
 	uint32_t i = 0;
-	uint32_t dac_value = 0; //dac code
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -356,25 +367,29 @@ int main(void)
   MX_DAC1_Init();
 	HMC472_Init();
   /* USER CODE BEGIN 2 */
-	dac_value = (uint32_t)(dac_voltage/3.3f*4095.0f);//vref=3.3v
+	
 	HAL_DAC_Start(&hdac1,DAC_CHANNEL_1);//dac1 open
 	HAL_DAC_SetValue(&hdac1,DAC_CHANNEL_1,DAC_ALIGN_12B_R,dac_value);//channel 1 output
+	
 	Init_AD9959();
 	AD9959_SetFrequency4Channel(f_L,2000000,f_L,2000000);
-	AD9959_SetAmp4Channel(vamp_L,vamp_A,vamp_L,vamp_A);
+	AD9959_SetAmp4Channel(vamp_L,vamp_A_1,vamp_L,vamp_A_2);
 	AD9959_SetPhase4Channel(0,0,0,deg);
+	
+	attenuation_hmc = attenuation * 2;
+	HMC472set(attenuation_hmc);
 	
 	printf("t12.txt=\"+ mode \"\xff\xff\xff");
 	printf("t6.txt=\"%d \"\xff\xff\xff",vamp_L);
 	printf("t7.txt=\"%d %% \"\xff\xff\xff",(int)(adjust*100.0+0.01));
-	printf("t8.txt=\"%d  \"\xff\xff\xff",f_L);
+	printf("t8.txt=\"%d MHz  \"\xff\xff\xff",f_L/1000000);
 	printf("t11.txt=\"%d deg \"\xff\xff\xff",deg);
-	printf("t13.txt=\"%d %% \"\xff\xff\xff",(int)(dac_voltage));
+	printf("t13.txt=\"%f V \"\xff\xff\xff",dac_voltage);
 	
   for (i = 0; i < 3; i = i + 1){
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
 		HAL_Delay(200);
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 		HAL_Delay(200);
 	}
 	
@@ -391,6 +406,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
 	
 	while (1)
   {
@@ -404,7 +421,6 @@ int main(void)
 		}
 		HAL_Delay(100);		//延时
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -506,7 +522,7 @@ void Error_Handler(void)
 
 #ifdef  USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
+  * @brief  Reports the name of the source file and the source line numbers
   *         where the assert_param error has occurred.
   * @param  file: pointer to the source file name
   * @param  line: assert_param error line source number

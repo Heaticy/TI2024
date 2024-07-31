@@ -740,7 +740,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\library\HMC472.c</PathWithFileName>
+      <PathWithFileName>..\..\library\HMC472.c</PathWithFileName>
       <FilenameWithoutPath>HMC472.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>

@@ -749,7 +749,7 @@
             <File>
               <FileName>HMC472.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\library\HMC472.c</FilePath>
+              <FilePath>..\..\library\HMC472.c</FilePath>
             </File>
           </Files>
         </Group>
