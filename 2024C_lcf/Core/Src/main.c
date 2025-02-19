@@ -39,17 +39,17 @@
 #define PI 3.1415926535
 
 // CW用下面这个数组
-uint32_t vamp_L[11][10] = { {91,182,273,364,455,536,625,714,803,891}, //30MHz,vamp_L_f_i = 0
-													 {90,182,272,362,454,534,622,710,799,887}, //31MHz,vamp_L_f_i = 1
-												   {90,180,270,361,452,532,620,708,796,883}, //32MHz,vamp_L_f_i = 2
-												   {90,180,269,360,451,530,619,706,793,881}, //33MHz,vamp_L_f_i = 3
-													 {90,180,270,360,450,530,618,705,793,880}, //34MHz,vamp_L_f_i = 4
-													 {90,180,270,360,450,530,618,705,793,880}, //35MHz,vamp_L_f_i = 5
-													 {90,180,270,361,451,531,619,707,795,882}, //36MHz,vamp_L_f_i = 6
-													 {90,181,271,362,453,533,621,710,798,885}, //37MHz,vamp_L_f_i = 7
-													 {91,182,273,364,455,536,625,713,802,893}, //38MHz,vamp_L_f_i = 8
-													 {91,183,275,367,458,540,630,719,809,900}, //39MHz,vamp_L_f_i = 9
-													 {92,185,277,370,463,545,635,726,816,910}, //40MHz,vamp_L_f_i = 10
+uint32_t vamp_L[11][10] = { {91,182,273,364,455,550,637,728,818,906}, //30MHz,vamp_L_f_i = 0
+													 {90,182,272,363,454,545,634,724,813,903}, //31MHz,vamp_L_f_i = 1
+												   {90,180,272,363,453,541,632,720,808,897}, //32MHz,vamp_L_f_i = 2
+												   {90,180,272,360,451,532,625,716,806,896}, //33MHz,vamp_L_f_i = 3
+													 {90,180,270,360,451,533,622,715,805,893}, //34MHz,vamp_L_f_i = 4
+													 {90,180,270,360,449,533,622,712,802,892}, //35MHz,vamp_L_f_i = 5
+													 {90,180,270,360,450,534,621,714,801,892}, //36MHz,vamp_L_f_i = 6
+													 {90,181,271,361,451,534,621,712,801,892}, //37MHz,vamp_L_f_i = 7
+													 {91,182,273,360,451,533,621,713,801,892}, //38MHz,vamp_L_f_i = 8
+													 {91,183,275,360,450,533,621,713,801,892}, //39MHz,vamp_L_f_i = 9
+													 {92,185,277,360,450,533,621,713,801,892}, //40MHz,vamp_L_f_i = 10
 };
 // 除了CW，都用下面这个数组
 uint32_t vamp_L_hmc[11][10] = { {91,182,273,364,455,536,625,714,750,800}, //30MHz,vamp_L_f_i = 0
@@ -82,7 +82,7 @@ uint8_t  attenuation_real[11] = {0,2,4,6,8,10,12,14,16,18,20}; // 对应显示0db-20
 uint8_t  attenuation_real_maxvamp[11] = {0,1,3,5,7,9,11,13,15,17,19}; // 最大有效值对应的数组
 // 调试范围是0-31
 
-uint8_t time_delay[7] = {0,50,80,110,140,170,200}; // ns级单位
+uint8_t time_delay[7] = {0,78,111,139,167,195,222}; // ns级单位
 uint8_t time_delay_i = 0;
 
 //float adjust[7] = {0.45f,0.5f,0.6f,0.7f,0.85f,0.95f,1.1f};
@@ -97,7 +97,7 @@ uint16_t vamp_A_2 = 963.3333f * VP_B; //  output3
 float dac_voltage = DAC_VOLTAGE_DEFAULT;
 uint32_t dac_value = (uint32_t)(DAC_VOLTAGE_DEFAULT/3.3f*4095.0f); //dac code
 
-float vamp_L_2_scale = 1.27;
+float vamp_L_2_scale = 1.1667f;
 uint32_t vamp_L_2 = 114;
 
 float w_s_ns = 0; // 调制信号频率2MHz
@@ -189,7 +189,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						vamp_L_i = 0;
 					}
 				}
-				if (mode == 1){ // 加法模式
+				if (mode == 1 || mode == 2){ // 加法模式
 					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, GPIO_PIN_RESET);
 					HAL_Delay(100);
 					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, GPIO_PIN_SET);
@@ -203,10 +203,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						vamp_L_i = 9;
 					}
 				}
-				vamp_L_2 = vamp_L_hmc[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
-				if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
-				else {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
-				
+				if (mode != 2){
+					vamp_L_2 = vamp_L_hmc[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
+					if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
+					else {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
+				}
+				else{
+					vamp_L_2 = vamp_L[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
+					if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
+					else {AD9959_SetAmp4Channel(vamp_L[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
+				}
 				printf("t6.txt=\"%d mV\"\xff\xff\xff",(vamp_L_i+1)*100);
 			}
 			if (CH455_KEY_NUM == 1){ // 调节调制，最好：500mV，30MHz
@@ -243,7 +249,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				dac_value = (uint32_t)(dac_voltage/3.3f*4095.0f);
 				HAL_DAC_SetValue(&hdac1,DAC_CHANNEL_1,DAC_ALIGN_12B_R,dac_value);//channel 1 output
 				
-				printf("t13.txt=\"%f V \"\xff\xff\xff",dac_voltage);
 				printf("t7.txt=\"%d %% \"\xff\xff\xff",(adjust_i+3)*10);
 			}
 			if (CH455_KEY_NUM == 2){ // 调节频率
@@ -261,7 +266,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						f_L = 30000000;
 					}
 				}
-				if (mode == 1){ // 加法模式
+				if (mode == 1 || mode == 2){ // 加法模式
 					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, GPIO_PIN_RESET);
 					HAL_Delay(100);
 					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, GPIO_PIN_SET);
@@ -275,11 +280,19 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 						f_L = 40000000;
 					}
 				}
+				
 				AD9959_SetFrequency4Channel(f_L,2000000,f_L,2000000);
 				vamp_L_f_i = f_L/1000000 - 30;
-				vamp_L_2 = vamp_L_hmc[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
-				if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
-				else {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
+				if (mode != 2){
+					vamp_L_2 = vamp_L_hmc[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
+					if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
+					else {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
+				}
+				else{
+					vamp_L_2 = vamp_L[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
+					if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
+					else {AD9959_SetAmp4Channel(vamp_L[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
+				}
 				
 				printf("t8.txt=\"%d MHz  \"\xff\xff\xff",f_L/1000000);
 			}
@@ -354,14 +367,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				delay_phi_s = normalize_angle(delay_phi_s);
 				delay_phi_c = normalize_angle(delay_phi_c);
 				
-				AD9959_SetPhase4Channel(0,0,delay_phi_c,delay_phi_s);
+				AD9959_SetPhase4Channel(0,0,360-delay_phi_c,360-delay_phi_s);
 				AD9959_SetFrequency4Channel(f_L,2000000,f_L,2000000);
 				vamp_L_2 = vamp_L_hmc[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
 				if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
 				else {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
-				
-
-				
+	
 				init_flag = 0;
 				if (time_delay_i == 6){init_flag = 1;}
 				
@@ -417,6 +428,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 			
 			if (CH455_KEY_NUM == 15){ // 开启CW测量模式，直流偏置为2V
 				uint8_t i;
+				mode = 2;
 				for (i = 0; i < 3; i++){
 					HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);HAL_GPIO_WritePin(GPIOD, GPIO_PIN_3, GPIO_PIN_SET);
 					HAL_Delay(100);
@@ -434,10 +446,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 				if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
 				else {AD9959_SetAmp4Channel(vamp_L[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
 				
-				printf("t12.txt=\"CW test \"\xff\xff\xff");
+				printf("t12.txt=\"CW(+) mode \"\xff\xff\xff");
 				printf("t6.txt=\"%d mV\"\xff\xff\xff",(vamp_L_i+1)*100);
 				printf("t8.txt=\"%d MHz  \"\xff\xff\xff",f_L/1000000);
-				printf("t13.txt=\"%f V \"\xff\xff\xff",dac_voltage);
 			}
 //			__HAL_GPIO_EXTI_CLEAR_FLAG(GPIO_PIN_13);
 		}
@@ -482,16 +493,20 @@ int main(void)
   MX_DAC1_Init();
 	HMC472_Init();
   /* USER CODE BEGIN 2 */
-	
+		for (int i = 0; i < 11; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            vamp_L[i][j] = vamp_L[i][j] * 1.05f;
+        }
+    }
 	HAL_DAC_Start(&hdac1,DAC_CHANNEL_1);//dac1 open
 	HAL_DAC_SetValue(&hdac1,DAC_CHANNEL_1,DAC_ALIGN_12B_R,dac_value);//channel 1 output
 	
 	Init_AD9959();
 	AD9959_SetPhase4Channel(0,0,deg[deg_i],0);
 	AD9959_SetFrequency4Channel(f_L,2000000,f_L,2000000);
-	vamp_L_2 = vamp_L[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
-	if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
-	else {AD9959_SetAmp4Channel(vamp_L[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
+	vamp_L_2 = vamp_L_hmc[vamp_L_f_i][vamp_L_i] * vamp_L_2_scale;
+	if (vamp_L_2 > 1022) {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,1023,vamp_A_2);}
+	else {AD9959_SetAmp4Channel(vamp_L_hmc[vamp_L_f_i][vamp_L_i],vamp_A_1,vamp_L_2,vamp_A_2);}
 	
 	
 	if(vamp_L_i == 9){attenuation_hmc = attenuation_real_maxvamp[attenuation / 2] * 2;}
@@ -503,7 +518,6 @@ int main(void)
 	printf("t7.txt=\"%d %% \"\xff\xff\xff",(adjust_i+3)*10);
 	printf("t8.txt=\"%d MHz  \"\xff\xff\xff",f_L/1000000);
 	printf("t11.txt=\"%d deg \"\xff\xff\xff",deg_i*30);
-	printf("t13.txt=\"%f V \"\xff\xff\xff",dac_voltage);
 	printf("t9.txt=\"%d dB\"\xff\xff\xff",attenuation);
 	printf("t10.txt=\"%d ns \"\xff\xff\xff",0);
 	
